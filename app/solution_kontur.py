@@ -12,7 +12,6 @@ from datasets import (
     Image,
 )
 
-from transformers import AutoImageProcessor, AutoModelForSequenceClassification
 from torchvision.transforms import (
     CenterCrop,
     Compose,
@@ -25,6 +24,7 @@ from torchvision.transforms import (
 
 from transformers import (
     AutoModelForImageClassification,
+    AutoImageProcessor,
     TrainingArguments,
     Trainer,
     pipeline

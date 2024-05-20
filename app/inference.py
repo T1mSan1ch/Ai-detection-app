@@ -1,62 +1,25 @@
-from transformers import ( # type: ignore
+import torch
+
+from transformers import (
     AutoModelForImageClassification,
     AutoImageProcessor,
-    pipeline
 )
 
+PATH = "t1msanswin-tiny-patch4-window7-224-Kontur-competition-52K"
+
+
+class Inference:
+    def __init__(self):
+        self.model = AutoModelForImageClassification.from_pretrained(PATH)
+        self.image_processor = AutoImageProcessor.from_pretrained(PATH)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def predict(self, image):
+        encoding = self.image_processor(image.convert("RGB"), return_tensors="pt")
+
+        outputs = self.model(**encoding)
+        result = torch.nn.functional.softmax(outputs.logits, dim=-1).tolist()[0][0]
+        return result
 
 
 
-DEFAULT_PATH = ''
-
-
-
-
-class Predict:
-    def __init__(self, model: Model, config: Config, device: int = 0):
-        self.device = device
-        self.repo_name = 't1msan/' + config.default_repo_name
-        self.image_processor = AutoImageProcessor.from_pretrained(self.repo_name)
-        self.model = AutoModelForImageClassification.from_pretrained(self.repo_name)
-        self.pipe = pipeline('image-classification', model=self.repo_name, device=self.device)
-
-    def set_device(self, device):
-        self.device = device
-        print(f"Вычисления производятся на {'GPU' if not self.device else 'CPU'}")
-
-    def show_device(self):
-        print(f"Вычисления производятся на {'GPU' if not self.device else 'CPU'}")
-
-    def set_repo_name(self, new_repo_name):
-        self.repo_name = new_repo_name
-        self.image_processor = AutoImageProcessor.from_pretrained(self.repo_name)
-        self.model = AutoModelForImageClassification.from_pretrained(self.repo_name)
-        self.pipe = pipeline('image-classification', model=self.repo_name, device=self.device)
-        print(f'Установлен новый репозиторий для загрузки предобученной модели. \n'
-              f'Актуальный репозиторий: {self.repo_name}')
-
-    def _data_preprocess(self, df: pd.DataFrame) -> tuple[pd.DataFrame, Dataset]:
-        if df.empty:
-            raise(Exception("Dataset is empty"))
-        if 'id' not in df.columns:
-            raise ValueError()
-        else:
-            df = df[['id']]
-        if isinstance(df, pd.DataFrame):
-            dataset_test = Dataset.from_pandas(df).cast_column("id", Image())
-            return df, dataset_test
-
-    def predict(self, dataset: pd.DataFrame) -> pd.DataFrame:
-
-        df, dataset_test = self._data_preprocess(dataset)
-
-        def check_fake_score(i):
-            image = dataset_test[i]["id"]
-            data = self.pipe(image)
-            for item in data:
-                if item['label'] == 'ai':
-                    return item['score']
-
-        df['target'] = df.index.to_series().apply(check_fake_score)
-
-        return df
