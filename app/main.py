@@ -1,37 +1,21 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
+import logging
 
-from pathlib import Path
-from PIL import Image
-import io
+from app.users.router import router as router_users
+from app.checks.router import router as router_checks
+from app.inference.predictions import router as router_predict
 
-from app.inference import Inference
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(
+    title="Сервис для проверки изображения на deepfake",
+    tags=["Проверка изображений"]
+)
 
-IMAGES_DIR = Path("../temp_img_storage")
-IMAGES_DIR.mkdir(exist_ok=True)
-
-inference_model = Inference()
-
-
-@app.post("/predict/")
-async def predict_image(file: UploadFile = File(...)):
-    try:
-        contents = await file.read()
-        image = Image.open(io.BytesIO(contents))
-
-        # Сохранение изображения в локальной папке
-        file_path = IMAGES_DIR / file.filename
-        with open(file_path, "wb") as f:
-            f.write(contents)
-
-        # Получение предсказания
-        probability = inference_model.predict(image)
-
-        return JSONResponse(content={"probability": probability, "file_path": str(file_path)})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+app.include_router(router_users)
+app.include_router(router_checks)
+app.include_router(router_predict)
 
 if __name__ == "__main__":
     import uvicorn

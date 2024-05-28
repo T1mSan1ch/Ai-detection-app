@@ -11,3 +11,4 @@ class Models(Base):
     path = Column(String, nullable=False)
     location = Column(Boolean, nullable=False)
     config = Column(JSON, nullable=False)
+

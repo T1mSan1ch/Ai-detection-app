@@ -14,7 +14,11 @@ class Settings(BaseSettings):
         DATABASE_URL: str = f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         return DATABASE_URL
 
+    SECRET_KEY: str
+    ALGORITHM: str
+
     class Config:
-        env_file = 'C://Users//tliso//PycharmProjects//ai_detection_app//.env'
+        env_file = '.env'
+
 
 settings = Settings()
